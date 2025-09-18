@@ -4,3 +4,4 @@ dist/
 playground/
 package-lock.json
 .DS_Store
+coverage/
