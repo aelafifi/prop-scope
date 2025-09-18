@@ -1,14 +1,25 @@
 {
   "name": "prop-scope",
   "version": "0.0.1-alpha.2",
-  "description": "",
+  "description": "A lightweight TypeScript library for temporarily overwriting object properties during callback execution with automatic restoration",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "scripts": {
     "build": "tsc",
     "prepublishOnly": "npm run build"
   },
-  "keywords": [],
+  "keywords": [
+    "typescript",
+    "object",
+    "properties",
+    "temporary",
+    "mocking",
+    "testing",
+    "configuration",
+    "scope",
+    "overwrite",
+    "restore"
+  ],
   "author": "ahmed.s.elafifi@gmail.com",
   "license": "ISC",
   "devDependencies": {
