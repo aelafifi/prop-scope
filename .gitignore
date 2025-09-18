@@ -5,3 +5,6 @@ playground/
 package-lock.json
 .DS_Store
 coverage/
+# Compiled test files
+tests/**/*.js
+tests/**/*.d.ts
