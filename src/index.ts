@@ -52,11 +52,11 @@ type OverwriteValue<T> = T | typeof IGNORE;
  * console.log(obj); // { x: 5, y: 10, z: 15 } - original values restored
  * ```
  */
-export function withProps<T extends object>(
+export function withProps<T extends object, U extends any>(
   source: T,
   overwrites: Partial<{ [K in keyof T]: OverwriteValue<T[K]> }>,
-  callback: (originalValues: Partial<T>) => void,
-) {
+  callback: (originalValues: Partial<T>) => U,
+): U {
   const originalValues: Partial<Record<keyof T, any>> = {};
 
   for (const key of Object.keys(overwrites) as (keyof T)[]) {
@@ -68,7 +68,7 @@ export function withProps<T extends object>(
   }
 
   try {
-    callback(originalValues);
+    return callback(originalValues);
   } finally {
     for (const key of Object.keys(overwrites) as (keyof T)[]) {
       if (key in originalValues) {
