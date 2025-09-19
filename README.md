@@ -84,6 +84,37 @@ withProps(
 console.log(settings); // { theme: 'dark', fontSize: 14, animations: true }
 ```
 
+### Using `REMEMBER` for Value Protection and Restoration
+
+Use the `REMEMBER` symbol to capture original values and ensure they're restored even if modified during callback execution:
+
+```typescript
+import { withProps, REMEMBER } from 'prop-scope';
+
+const user = { name: 'John', age: 30, role: 'admin' };
+
+withProps(
+    user,
+    {
+        name: 'Jane',           // Override name
+        age: REMEMBER,          // Capture original age and ensure restoration
+        role: 'user'            // Override role
+    },
+    (originalValues) => {
+        console.log(user); // { name: 'Jane', age: 30, role: 'user' }
+        console.log(originalValues); // { name: 'John', age: 30, role: 'admin' }
+        
+        // Even if callback modifies the age during execution...
+        user.age = 999;
+        console.log(user); // { name: 'Jane', age: 999, role: 'user' }
+        
+        // The REMEMBER ensures it will be restored to original value (30)
+    }
+);
+
+console.log(user); // { name: 'John', age: 30, role: 'admin' } - age restored to 30!
+```
+
 ### Testing Configuration Scenarios
 
 Perfect for testing different configurations:
@@ -154,12 +185,12 @@ Temporarily overwrites properties on a source object while executing a callback.
 #### Parameters
 
 - **`source`** (`T extends object`): The object whose properties will be temporarily overwritten
-- **`overwrites`** (`Partial<{ [K in keyof T]: T[K] | typeof IGNORE }>`): Object containing properties and values to overwrite
-- **`callback`** (`(originalValues: Partial<T>) => void`): Function to execute with the overwritten properties. Receives the original values as an argument
+- **`overwrites`** (`Partial<{ [K in keyof T]: T[K] | typeof IGNORE | typeof REMEMBER }>`): Object containing properties and values to overwrite
+- **`callback`** (`(originalValues: Partial<T>) => U`): Function to execute with the overwritten properties. Receives the original values as an argument
 
 #### Returns
 
-`void`
+The return value of the callback function (`U`)
 
 ### `IGNORE`
 
@@ -167,6 +198,14 @@ A sentinel symbol used to skip overwriting a property. Unlike `null` or `undefin
 
 ```typescript
 const IGNORE: unique symbol
+```
+
+### `REMEMBER`
+
+A sentinel symbol used to capture the original value of a property without overwriting it initially, but ensures the property is restored to its original value even if modified during callback execution. This is useful when you want to access the original value and guarantee restoration regardless of any modifications that occur within the callback.
+
+```typescript
+const REMEMBER: unique symbol
 ```
 
 ## ⚠️ Important Warnings
@@ -210,6 +249,7 @@ console.log(obj); // { a: 'hello', b: 'world' } - restored
 - **Feature Flags**: Conditionally enable/disable features during execution
 - **Development Tools**: Create debugging utilities that modify behavior temporarily
 - **A/B Testing**: Test different object states without permanent modification
+- **Value Protection**: Use `REMEMBER` to ensure properties are restored even if modified during callback execution
 
 ## 🔍 TypeScript Support
 
