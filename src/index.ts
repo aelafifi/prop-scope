@@ -63,13 +63,14 @@ export function withProps<T extends object, U extends any>(
   for (const key of Object.keys(overwrites) as (keyof T)[]) {
     const value = overwrites[key];
 
-    if (value === REMEMBER) {
-      // Just REMEMBER the original value without overwriting
+    if (value !== IGNORE) {
+      // Remember the original value before any potential overwrite, unless it's ignored
       originalValues[key] = source[key];
-    } else if (value !== IGNORE) {
-      // Only overwrite if the value is not `IGNORE`
-      originalValues[key] = source[key];
-      source[key] = value as T[typeof key];
+
+      if (value !== REMEMBER) {
+        // Only overwrite if the value is not `REMEMBER`
+        source[key] = value as T[typeof key];
+      }
     }
   }
 
