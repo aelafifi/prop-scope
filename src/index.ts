@@ -3,12 +3,13 @@
  * Unlike `null` or `undefined`, which are treated as actual values, using `IGNORE`
  * tells `withProps` to leave that property unchanged.
  */
-export const IGNORE = Symbol.for("Ignore");
+export const IGNORE = Symbol("__ignore__");
+export const REMEMBER = Symbol("__remember__");
 
 /**
- * Type representing a value that can either be of type `T` or the special `IGNORE` symbol.
+ * Type representing a value that can either be of type `T` or the special `IGNORE` or `REMEMBER` symbols.
  */
-type OverwriteValue<T> = T | typeof IGNORE;
+type OverwriteValue<T> = T | typeof IGNORE | typeof REMEMBER;
 
 /**
  * Temporarily overwrites properties on a source object while executing a callback,
@@ -61,9 +62,15 @@ export function withProps<T extends object, U extends any>(
 
   for (const key of Object.keys(overwrites) as (keyof T)[]) {
     const value = overwrites[key];
+
     if (value !== IGNORE) {
+      // Remember the original value before any potential overwrite, unless it's ignored
       originalValues[key] = source[key];
-      source[key] = value as T[typeof key];
+
+      if (value !== REMEMBER) {
+        // Only overwrite if the value is not `REMEMBER`
+        source[key] = value as T[typeof key];
+      }
     }
   }
 
