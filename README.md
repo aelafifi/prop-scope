@@ -84,9 +84,9 @@ withProps(
 console.log(settings); // { theme: 'dark', fontSize: 14, animations: true }
 ```
 
-### Using `REMEMBER` to Capture Original Values
+### Using `REMEMBER` for Value Protection and Restoration
 
-Use the `REMEMBER` symbol to capture original values without overwriting them:
+Use the `REMEMBER` symbol to capture original values and ensure they're restored even if modified during callback execution:
 
 ```typescript
 import { withProps, REMEMBER } from 'prop-scope';
@@ -97,20 +97,22 @@ withProps(
     user,
     {
         name: 'Jane',           // Override name
-        age: REMEMBER,          // Just capture original age, don't override
+        age: REMEMBER,          // Capture original age and ensure restoration
         role: 'user'            // Override role
     },
     (originalValues) => {
         console.log(user); // { name: 'Jane', age: 30, role: 'user' }
         console.log(originalValues); // { name: 'John', age: 30, role: 'admin' }
         
-        // You can access both current and original values
-        console.log(`User changed from ${originalValues.name} to ${user.name}`);
-        console.log(`Age remains: ${originalValues.age}`);
+        // Even if callback modifies the age during execution...
+        user.age = 999;
+        console.log(user); // { name: 'Jane', age: 999, role: 'user' }
+        
+        // The REMEMBER ensures it will be restored to original value (30)
     }
 );
 
-console.log(user); // { name: 'John', age: 30, role: 'admin' } - fully restored
+console.log(user); // { name: 'John', age: 30, role: 'admin' } - age restored to 30!
 ```
 
 ### Testing Configuration Scenarios
@@ -200,7 +202,7 @@ const IGNORE: unique symbol
 
 ### `REMEMBER`
 
-A sentinel symbol used to capture the original value of a property without overwriting it. This is useful when you want to access the original value in the callback but don't need to modify the property.
+A sentinel symbol used to capture the original value of a property without overwriting it initially, but ensures the property is restored to its original value even if modified during callback execution. This is useful when you want to access the original value and guarantee restoration regardless of any modifications that occur within the callback.
 
 ```typescript
 const REMEMBER: unique symbol
@@ -247,7 +249,7 @@ console.log(obj); // { a: 'hello', b: 'world' } - restored
 - **Feature Flags**: Conditionally enable/disable features during execution
 - **Development Tools**: Create debugging utilities that modify behavior temporarily
 - **A/B Testing**: Test different object states without permanent modification
-- **Value Tracking**: Use `REMEMBER` to capture original values for comparison or logging without modification
+- **Value Protection**: Use `REMEMBER` to ensure properties are restored even if modified during callback execution
 
 ## 🔍 TypeScript Support
 
