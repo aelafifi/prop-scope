@@ -9,7 +9,7 @@ export const REMEMBER = Symbol("__remember__");
 /**
  * Type representing a value that can either be of type `T` or the special `IGNORE` symbol.
  */
-type OverwriteValue<T> = T | typeof IGNORE;
+type OverwriteValue<T> = T | typeof IGNORE | typeof REMEMBER;
 
 /**
  * Temporarily overwrites properties on a source object while executing a callback,
