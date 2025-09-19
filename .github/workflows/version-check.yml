@@ -1,0 +1,102 @@
+name: Version Check
+
+on:
+  pull_request:
+    branches: [main]
+    # Only run when package.json is modified to avoid unnecessary runs
+    paths: ['package.json']
+
+jobs:
+  version-check:
+    runs-on: ubuntu-latest
+    name: Check if package.json version is increased
+    
+    steps:
+      - name: Checkout PR branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Fetch all history to compare versions
+          
+      - name: Get current version from PR
+        id: pr_version
+        run: |
+          PR_VERSION=$(node -p "require('./package.json').version")
+          echo "version=$PR_VERSION" >> $GITHUB_OUTPUT
+          echo "PR version: $PR_VERSION"
+          
+      - name: Get version from main branch
+        id: main_version
+        run: |
+          # Fetch main branch
+          git fetch origin main
+          # Get package.json from main branch using FETCH_HEAD
+          MAIN_VERSION=$(git show FETCH_HEAD:package.json | node -p "JSON.parse(require('fs').readFileSync('/dev/stdin', 'utf8')).version")
+          echo "version=$MAIN_VERSION" >> $GITHUB_OUTPUT
+          echo "Main version: $MAIN_VERSION"
+          
+      - name: Compare versions
+        id: compare
+        run: |
+          # Function to compare semantic versions
+          compare_versions() {
+            local ver1=$1
+            local ver2=$2
+            
+            # Split versions into arrays
+            IFS='.' read -ra VER1 <<< "$ver1"
+            IFS='.' read -ra VER2 <<< "$ver2"
+            
+            # Compare major version
+            if [ ${VER1[0]} -gt ${VER2[0]} ]; then
+              return 0  # ver1 > ver2
+            elif [ ${VER1[0]} -lt ${VER2[0]} ]; then
+              return 1  # ver1 < ver2
+            fi
+            
+            # Compare minor version
+            if [ ${VER1[1]} -gt ${VER2[1]} ]; then
+              return 0  # ver1 > ver2
+            elif [ ${VER1[1]} -lt ${VER2[1]} ]; then
+              return 1  # ver1 < ver2
+            fi
+            
+            # Compare patch version
+            if [ ${VER1[2]} -gt ${VER2[2]} ]; then
+              return 0  # ver1 > ver2
+            else
+              return 1  # ver1 <= ver2
+            fi
+          }
+          
+          PR_VERSION="${{ steps.pr_version.outputs.version }}"
+          MAIN_VERSION="${{ steps.main_version.outputs.version }}"
+          
+          echo "Comparing versions:"
+          echo "Main branch: $MAIN_VERSION"
+          echo "PR branch: $PR_VERSION"
+          
+          if compare_versions "$PR_VERSION" "$MAIN_VERSION"; then
+            echo "✅ Version increased from $MAIN_VERSION to $PR_VERSION"
+            echo "success=true" >> $GITHUB_OUTPUT
+          else
+            echo "❌ Version not increased! Current: $MAIN_VERSION, PR: $PR_VERSION"
+            echo "success=false" >> $GITHUB_OUTPUT
+          fi
+          
+      - name: Fail if version not increased
+        if: steps.compare.outputs.success == 'false'
+        run: |
+          echo "::error title=Version Not Increased::The version in package.json must be increased when merging to main branch."
+          echo "::error::Current version on main: ${{ steps.main_version.outputs.version }}"
+          echo "::error::Version in PR: ${{ steps.pr_version.outputs.version }}"
+          echo ""
+          echo "Please update the version in package.json using semantic versioning:"
+          echo "- For breaking changes: increase major version (e.g., 1.0.0 → 2.0.0)"
+          echo "- For new features: increase minor version (e.g., 1.0.0 → 1.1.0)"
+          echo "- For bug fixes: increase patch version (e.g., 1.0.0 → 1.0.1)"
+          exit 1
+          
+      - name: Success message
+        if: steps.compare.outputs.success == 'true'
+        run: |
+          echo "✅ Version check passed! Version increased from ${{ steps.main_version.outputs.version }} to ${{ steps.pr_version.outputs.version }}"
